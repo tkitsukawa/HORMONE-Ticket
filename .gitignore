@@ -3,5 +3,4 @@ __pycache__/
 *.pyc
 logs/
 chrome_data/
-images/
 .DS_Store

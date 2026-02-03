@@ -1,0 +1,19 @@
+{
+    "check_interval": 60,
+    "target_tickets": [
+        {
+            "id": "20260310",
+            "date": "2026-03-10",
+            "name": "“LIFE”2026 - Day 1",
+            "keywords": [],
+            "auto_reserve": false
+        },
+        {
+            "id": "20260311",
+            "date": "2026-03-11",
+            "name": "“LIFE”2026 - Day 2",
+            "keywords": [],
+            "auto_reserve": false
+        }
+    ]
+}

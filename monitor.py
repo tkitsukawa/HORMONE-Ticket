@@ -19,7 +19,7 @@ LINE_USER_ID = os.getenv('LINE_USER_ID')
 
 CONFIG_FILE = 'config.json'
 LOG_DIR = 'logs'
-TARGET_URL = "https://eplus.jp/sf/detail/2052790001"
+DEFAULT_TARGET_URL = "https://eplus.jp/sf/detail/2052790001"
 
 # Track notified statuses to prevent spam
 notified_statuses = {}
@@ -79,6 +79,9 @@ def save_log_csv(status_data):
 def check_tickets():
     config = load_config()
     target_tickets = config.get('target_tickets', [])
+    target_url = config.get('target_url', DEFAULT_TARGET_URL)
+    sale_type_filter = config.get('sale_type_filter', []) # list of "lottery", "general"
+
     if not target_tickets:
         print("No target tickets configured.")
         return
@@ -94,8 +97,8 @@ def check_tickets():
     driver = webdriver.Chrome(options=options)
     
     try:
-        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Checking eplus page...")
-        driver.get(TARGET_URL)
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Checking eplus page: {target_url} ...")
+        driver.get(target_url)
         time.sleep(5) # Wait for page load
 
         articles = driver.find_elements(By.CLASS_NAME, 'block-ticket-article')
@@ -128,6 +131,28 @@ def check_tickets():
                             title_text = re.sub(r'\s+', ' ', title_text)
                             status_text = re.sub(r'\s+', ' ', status_text)
                             
+                            # Determine Type from label or title
+                            ticket_type_text = ""
+                            try:
+                                label_el = block.find_element(By.CLASS_NAME, 'label-ticket')
+                                ticket_type_text = label_el.get_attribute("textContent").strip()
+                            except:
+                                pass # No label
+                            
+                            is_lottery = "抽選" in ticket_type_text or "抽選" in title_text
+                            is_general = "先着" in ticket_type_text or "一般" in title_text or "先着" in title_text
+                            
+                            # Apply Sale Type Filter
+                            if sale_type_filter:
+                                matched = False
+                                if "lottery" in sale_type_filter and is_lottery:
+                                    matched = True
+                                if "general" in sale_type_filter and is_general:
+                                    matched = True
+                                
+                                if not matched:
+                                    continue # Skip this ticket block
+
                             # Filter by keywords if configured
                             keywords = target.get('keywords', [])
                             if keywords:
@@ -149,7 +174,7 @@ def check_tickets():
                             if is_available:
                                 # If it's available, notify if it wasn't available before OR we haven't tracked it yet
                                 if prev_status != status_text:
-                                    messages.append(f"【AVAILABLE】\n{unique_key}\nStatus: {status_text}\nLink: {TARGET_URL}")
+                                    messages.append(f"【AVAILABLE】\n{unique_key}\nStatus: {status_text}\nLink: {target_url}")
                                     notified_statuses[unique_key] = status_text
                             else:
                                 # Not available, just update status
@@ -176,7 +201,10 @@ def check_tickets():
 
 def main():
     print("Starting HORMONE-Ticket Monitor...")
-    print(f"Target URL: {TARGET_URL}")
+    # Load config initially to show URL
+    config = load_config()
+    target_url = config.get('target_url', DEFAULT_TARGET_URL)
+    print(f"Target URL: {target_url}")
     
     # Run once immediately
     check_tickets()

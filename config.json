@@ -1,5 +1,7 @@
 {
+    "target_url": "https://eplus.jp/sf/detail/2052790001",
     "check_interval": 60,
+    "sale_type_filter": [],
     "target_tickets": [
         {
             "id": "20260310",

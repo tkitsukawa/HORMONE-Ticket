@@ -165,8 +165,21 @@ def check_tickets():
                             print(f"Found: {unique_key} -> {status_text}")
 
                             # Determine availability
-                            # Positive phrases
-                            is_available = any(x in status_text for x in ["受付中", "販売中", "残りわずか", "空席あり"])
+                            # Positive phrases (Strict mode: Only Circle or Triangle)
+                            # is_available = any(x in status_text for x in ["受付中", "販売中", "残りわずか", "空席あり"])
+                            
+                            # Check for explicit availability symbols (Circle, Triangle, Double Circle)
+                            # Also check for "空席あり" or "残りわずか" which usually imply availability
+                            # Exclude if it only says "受付中" but might be X (though usually "受付中" is generic)
+                            # Users reported "受付中" leads to X. So we look for symbols.
+                            
+                            # Standard eplus symbols: ◎ (Double Circle), ○ (Circle), △ (Triangle)
+                            has_symbol = any(s in status_text for s in ["◎", "○", "△"])
+                            
+                            # Also keep strong text indicators if symbols aren't used but text is explicit
+                            has_text = any(t in status_text for t in ["空席あり", "残りわずか"])
+                            
+                            is_available = has_symbol or has_text
                             
                             prev_status = notified_statuses.get(unique_key)
                             
